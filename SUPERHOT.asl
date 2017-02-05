@@ -26,5 +26,5 @@
  }
  
  split {
- 	return false;
+ 	return current.realLevelId != old.realLevelId;
  }
