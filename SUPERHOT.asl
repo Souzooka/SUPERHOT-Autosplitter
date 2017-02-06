@@ -1,10 +1,10 @@
 
  state("SH", "feb52017") {
- 	uint kills : "mono.dll", 0x1F5510, 0x8, 0x4E4, 0x424, 0x85C, 0x0;
+ 	uint kills : "mono.dll", 0x1F3094, 0x62C, 0x200, 0x54, 0x154, 0x0;
  	// realLevelId doesn't seem to have a valid pointer until a level has been entered, but can be used to track level changes.
- 	ushort realLevelId : "mono.dll", 0x1F5510, 0x8, 0x4E4, 0x424, 0x85C, 0x14;
+ 	ushort realLevelId : "mono.dll", 0x1F3094, 0x62C, 0x200, 0x54, 0x154, 0x14;
  	// only useful for starts
- 	ushort levelId : 0xF3FEF0, 0x354, 0xF54, 0x7A4, 0x894, 0x10;
+ 	ushort levelId : "mono.dll", 0x1F3094, 0x784, 0xEDC, 0x704, 0x894, 0x10;
  }
 
  init
@@ -22,9 +22,13 @@
 
  update
  {
- 	print(current.realLevelId.ToString());
+ 	
  }
  
  split {
- 	return current.realLevelId != old.realLevelId;
+ 	if (current.realLevelId != old.realLevelId && current.realLevelId != 54144 && old.realLevelId != 54144 && current.realLevelId != 0 && old.realLevelId != 0) {
+ 		print(current.realLevelId.ToString());
+ 		print(old.realLevelId.ToString());
+ 		return true;
+ 	}
  }
