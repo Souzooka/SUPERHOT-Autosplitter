@@ -80,10 +80,24 @@
 				vars.killsAddr = memory.ReadValue<int>((IntPtr)vars.killsCodeAddr);
 				print("levelID address:" + ((IntPtr)vars.killsAddr + 0x14).ToString("X"));
 				vars.levelIDAddr = ((IntPtr)vars.killsAddr + 0x14);
+
+				vars.killsValue = new MemoryWatcher<int>((IntPtr)vars.killsAddr);
+				vars.levelIDValue = new MemoryWatcher<int>((IntPtr)vars.levelIDAddr);
+
+				vars.watchers.Clear();
+				vars.watchers.AddRange(new MemoryWatcher[]
+				{
+					vars.killsValue,
+					vars.levelIDValue
+				});
+
 				break;
 			}
 		}
  	}
+
+ 	print(vars.killsValue.Current.ToString());
+ 	print(vars.levelIDValue.Current.ToString());
 
  	vars.watchers.UpdateAll(game);
  }
@@ -95,5 +109,5 @@
  }
  
  split {
-
+ 	return vars.levelIDValue.Current != vars.levelIDValue.Old;
  }
