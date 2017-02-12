@@ -3,13 +3,33 @@
 
  }
 
+ // mono.mono_set_defaults+22C9
+ // goes to code 0x500 off start of module, module size 0xF1000
+ // 0x53F offset, call code we want
+ // goes to code in module we want, 0x5A8 from start, module size 0x5F000
+ // 
+
+
+
  startup
  {
  	vars.watchers = new MemoryWatcherList();
+ }
 
-	// ptr: address of the offset (not the start of the instruction!)
-	// offsetSize: the number of bytes of the offset
-	// remainingBytes: the number of bytes until the end of the instruction (not including the offset bytes)
+ init
+ {
+	vars.killsTarget = new SigScanTarget(2,
+		"8B 0D ?? ?? ?? ??",	// mov ecx,05E1DEB4 ; kills address
+		"41",					// inc ecx
+		"B8 ?? ?? ?? ??",		// mov eax,05E1DEB4
+		"89 08",				// mov [eax],ecx
+		"8B 45 08",				// mov eax,[ebp+08]
+		"8B 40 54",				// mov eax,[eax+54]
+		"83 EC 08",				// sub esp,08
+		"68 ?? ?? ?? ??",		// push 05DFEFC0
+		"50"					// push eax
+		);
+
 	vars.ReadOffset = (Func<Process, IntPtr, int, int, IntPtr>)((proc, ptr, offsetSize, remainingBytes) =>
 	{
 		byte[] offsetBytes;
@@ -34,37 +54,7 @@
 		return ptr + offsetSize + remainingBytes + offset;
 	});
 
-	vars.killsTarget = new SigScanTarget(44,
-		"8B 0D ?? ?? ?? ??",	// mov ecx,05E1DEB4 ; kills address
-		"41",					// inc ecx
-		"B8 ?? ?? ?? ??",		// mov eax,05E1DEB4
-		"89 08",				// mov [eax],ecx
-		"8B 45 08",				// mov eax,[ebp+08]
-		"8B 40 54",				// mov eax,[eax+54]
-		"83 EC 08",				// sub esp,08
-		"68 ?? ?? ?? ??",		// push 05DFEFC0
-		"50"					// push eax
-		);
- }
-
- init
- {
- 	var module = modules.First();
-
- 	int baseAddress = 0x28CBD000;
- 	var baseAddressOffset = Int32.Parse(module.BaseAddress.ToString());
- 	baseAddress += baseAddressOffset;
- 	var baseAddressPtr = new IntPtr(baseAddress);
-	var scanner = new SignatureScanner(game, baseAddressPtr, 0x53000);
-	print(scanner.Scan(vars.killsTarget).ToString());
-	print(modules.ToString());
-
-
-	print("modules.First().ModuleMemorySize == " + "0x" + modules.First().ModuleMemorySize.ToString("X8"));
-
-	if (modules.First().ModuleMemorySize == 0x10D0000) {
-		version = "feb52017";
-	}
+	vars.killsCodeAddr = (IntPtr)0;
  }
  
  start {
@@ -73,12 +63,35 @@
 
  update
  {
+ 	if (vars.killsCodeAddr == IntPtr.Zero) {
+ 		foreach (var page in memory.MemoryPages()) {
+			var bytes = memory.ReadBytes(page.BaseAddress, (int)page.RegionSize);
+			if (bytes == null) {
+				continue;
+			}
+			var scanner = new SignatureScanner(game, page.BaseAddress, (int)page.RegionSize);
+			vars.killsCodeAddr = scanner.Scan(vars.killsTarget); 
+		
+			//print(String.Format("0x{0:X} {1} {2} {3}", (long)page.BaseAddress, page.RegionSize, page.Protect, page.Type));
+			if (vars.killsCodeAddr != IntPtr.Zero) {
+				print("found at 0x" + vars.killsCodeAddr.ToString("X"));
+				// Finally
+				print("kills address:" + memory.ReadValue<int>((IntPtr)vars.killsCodeAddr).ToString("X"));
+				vars.killsAddr = memory.ReadValue<int>((IntPtr)vars.killsCodeAddr);
+				print("levelID address:" + ((IntPtr)vars.killsAddr + 0x14).ToString("X"));
+				vars.levelIDAddr = ((IntPtr)vars.killsAddr + 0x14);
+				break;
+			}
+		}
+ 	}
+
  	vars.watchers.UpdateAll(game);
  }
 
  exit
  {
  	timer.IsGameTimePaused = false;
+ 	vars.killsAddr = IntPtr.Zero;
  }
  
  split {
