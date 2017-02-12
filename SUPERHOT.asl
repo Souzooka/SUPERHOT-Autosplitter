@@ -55,6 +55,9 @@
 	});
 
 	vars.killsCodeAddr = (IntPtr)0;
+
+	// "380" is main menu
+	vars.levelHexTrim = "380";
  }
  
  start {
@@ -84,6 +87,7 @@
 				vars.killsValue = new MemoryWatcher<int>((IntPtr)vars.killsAddr);
 				vars.levelIDValue = new MemoryWatcher<int>((IntPtr)vars.levelIDAddr);
 
+
 				vars.watchers.Clear();
 				vars.watchers.AddRange(new MemoryWatcher[]
 				{
@@ -96,9 +100,6 @@
 		}
  	}
 
- 	print(vars.killsValue.Current.ToString());
- 	print(vars.levelIDValue.Current.ToString());
-
  	vars.watchers.UpdateAll(game);
  }
 
@@ -109,5 +110,9 @@
  }
  
  split {
- 	return vars.levelIDValue.Current != vars.levelIDValue.Old;
+ 	 if (vars.levelIDValue.Current != vars.levelIDValue.Old) {
+ 		vars.levelHexTrim = ((int)vars.levelIDValue.Current).ToString("X");
+ 		vars.levelHexTrim = vars.levelHexTrim.Substring(vars.levelHexTrim.Length - 3);
+ 		print(vars.levelHexTrim);
+ 	}
  }
