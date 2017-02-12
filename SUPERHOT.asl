@@ -58,6 +58,9 @@
 
 	// "380" is main menu
 	vars.levelHexTrim = "380";
+	vars.levelHexTrimOld = "placeholder";
+	vars.levelHexTrimCurrent = "placeholder";
+	vars.levelHexTrimCore = "placeholder";
  }
  
  start {
@@ -110,9 +113,56 @@
  }
  
  split {
- 	 if (vars.levelIDValue.Current != vars.levelIDValue.Old) {
- 		vars.levelHexTrim = ((int)vars.levelIDValue.Current).ToString("X");
- 		vars.levelHexTrim = vars.levelHexTrim.Substring(vars.levelHexTrim.Length - 3);
- 		print(vars.levelHexTrim);
- 	}
+	if (vars.levelIDValue.Current != vars.levelIDValue.Old && vars.levelIDValue.Old != 0) {
+
+		if (vars.levelIDValue.Old != 0) {
+	 	 	vars.levelHexTrimOld = (vars.levelIDValue.Old).ToString("X");
+	 		vars.levelHexTrimOld = vars.levelHexTrimOld.Substring(vars.levelHexTrimOld.Length - 3);
+	 		print(vars.levelHexTrimOld);
+	 	}
+
+ 		vars.levelHexTrimCurrent = ((int)vars.levelIDValue.Current).ToString("X");
+ 		vars.levelHexTrimCurrent = vars.levelHexTrimCurrent.Substring(vars.levelHexTrimCurrent.Length - 3);
+ 		print(vars.levelHexTrimCurrent.ToString());
+
+ 		// kill me now
+ 		if (vars.levelHexTrimOld == "EE0" || vars.levelHexTrimOld == vars.levelHexTrimCore) {
+ 			if (vars.levelHexTrimCurrent == "E70" || vars.levelHexTrimCurrent == "380") {
+ 				return true;
+ 			}
+ 			vars.levelHexTrimCore = vars.levelHexTrimCurrent;
+ 			return false;
+ 		}
+
+
+ 		// if we enter or leave the main menu
+		if (vars.levelHexTrimCurrent == "380" || vars.levelHexTrimOld == "380") {
+			return false;
+		}
+		// Longway transition
+		if (vars.levelHexTrimCurrent == "F50") {
+			return false;
+		}
+		// Longway to Core
+		if (vars.levelHexTrimOld == "F50" && vars.levelHexTrimCurrent == "EE0") {
+			return true;
+		}
+		// Core's IDs are not stable
+		if (vars.levelHexTrimOld == "EE0" || vars.levelHexTrimCurrent == "EE0") {
+			return false;
+		}
+		if (vars.levelHexTrimCurrent == "D90") {
+			return false;
+		}
+		if (vars.levelHexTrimCurrent == "E00") {
+			return false;
+		}
+		return true;
+	}
+
+	if (vars.levelHexTrimCurrent == "D90" && vars.killsValue.Current == 1) {
+		return true;
+	}
+
+
  }
